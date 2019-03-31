@@ -2,14 +2,17 @@ package com.example.cameraml;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -21,7 +24,20 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
+import com.google.firebase.ml.vision.common.FirebaseVisionPoint;
+import com.google.firebase.ml.vision.face.FirebaseVisionFace;
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceContour;
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector;
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions;
+
 import java.io.File;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -35,6 +51,7 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        FirebaseApp.initializeApp(this);
         imageView = findViewById(R.id.imageView);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -126,7 +143,69 @@ public class MainActivity extends AppCompatActivity
         if(resultCode != RESULT_CANCELED){
             if (requestCode == CAMERA_REQUEST) {
                 Bitmap photo = (Bitmap) data.getExtras().get("data");
-                imageView.setImageBitmap(photo);
+                FirebaseVisionFaceDetectorOptions highAccuracyOpts =
+                        new FirebaseVisionFaceDetectorOptions.Builder()
+                                .setPerformanceMode(FirebaseVisionFaceDetectorOptions.ACCURATE)
+                                .setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
+                                .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
+                                .build();
+
+                FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(photo);
+
+                FirebaseVisionFaceDetector detector = FirebaseVision.getInstance()
+                        .getVisionFaceDetector(highAccuracyOpts);
+
+                Task<List<FirebaseVisionFace>> result =
+                        detector.detectInImage(image)
+                                .addOnSuccessListener(
+                                        new OnSuccessListener<List<FirebaseVisionFace>>() {
+                                            @Override
+                                            public void onSuccess(List<FirebaseVisionFace> faces) {
+                                                // Task completed successfully
+                                                // ...
+                                                for (FirebaseVisionFace face : faces) {
+                                                    Rect bounds = face.getBoundingBox();
+                                                    float rotY = face.getHeadEulerAngleY();  // Head is rotated to the right rotY degrees
+                                                    float rotZ = face.getHeadEulerAngleZ();  // Head is tilted sideways rotZ degrees
+
+
+
+                                                    // If contour detection was enabled:
+                                                    List<FirebaseVisionPoint> leftEyeContour =
+                                                            face.getContour(FirebaseVisionFaceContour.LEFT_EYE).getPoints();
+                                                    List<FirebaseVisionPoint> upperLipBottomContour =
+                                                            face.getContour(FirebaseVisionFaceContour.UPPER_LIP_BOTTOM).getPoints();
+
+                                                    // If classification was enabled:
+                                                    if (face.getSmilingProbability() != FirebaseVisionFace.UNCOMPUTED_PROBABILITY) {
+                                                        float smileProb = face.getSmilingProbability();
+                                                        Log.i("MAIN ACTIVITY : ",String.valueOf(smileProb));
+                                                    }
+                                                    if (face.getRightEyeOpenProbability() != FirebaseVisionFace.UNCOMPUTED_PROBABILITY) {
+                                                        float rightEyeOpenProb = face.getRightEyeOpenProbability();
+                                                        Log.i("MAIN ACTIVITY : ",String.valueOf(rightEyeOpenProb));
+                                                    }
+
+                                                    // If face tracking was enabled:
+                                                    if (face.getTrackingId() != FirebaseVisionFace.INVALID_ID) {
+                                                        int id = face.getTrackingId();
+                                                        Log.i("MAIN ACTIVITY : ",String.valueOf(id));
+
+
+                                                    }
+                                                }
+                                            }
+                                        })
+                                .addOnFailureListener(
+                                        new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                // Task failed with an exception
+                                                // ...
+                                            }
+                                        });
+
+
             }
         }
     }

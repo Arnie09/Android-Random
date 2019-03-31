@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "909520486232",
+    "firebase_url": "https://camera-ml.firebaseio.com",
+    "project_id": "camera-ml",
+    "storage_bucket": "camera-ml.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:909520486232:android:50a8a4b26542a98d",
+        "android_client_info": {
+          "package_name": "com.example.cameraml"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "909520486232-4mhgkr7j6s9c31g1j5d4oqopg3hrr9ni.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDd3lrMzc2CubADZQS5PQPdYzXU2xwuFlc"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
