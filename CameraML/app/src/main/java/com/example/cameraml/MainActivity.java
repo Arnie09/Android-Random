@@ -23,6 +23,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -43,6 +45,9 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     ImageView imageView;
+    TextView smileProbTV;
+    TextView leftEye;
+    TextView rightEye;
     public static final int CAMERA_REQUEST = 0;
 
     @Override
@@ -52,7 +57,12 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         FirebaseApp.initializeApp(this);
+
+        //getting all the textViews and image views
         imageView = findViewById(R.id.imageView);
+        leftEye = findViewById(R.id.leftEye);
+        rightEye = findViewById(R.id.rightEye);
+        smileProbTV = findViewById(R.id.SmileTV);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -142,7 +152,7 @@ public class MainActivity extends AppCompatActivity
 //        imageView.setImageDrawable(Drawable.createFromPath(path));
         if(resultCode != RESULT_CANCELED){
             if (requestCode == CAMERA_REQUEST) {
-                Bitmap photo = (Bitmap) data.getExtras().get("data");
+                final Bitmap photo = (Bitmap) data.getExtras().get("data");
                 FirebaseVisionFaceDetectorOptions highAccuracyOpts =
                         new FirebaseVisionFaceDetectorOptions.Builder()
                                 .setPerformanceMode(FirebaseVisionFaceDetectorOptions.ACCURATE)
@@ -150,7 +160,7 @@ public class MainActivity extends AppCompatActivity
                                 .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
                                 .build();
 
-                FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(photo);
+                final FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(photo);
 
                 FirebaseVisionFaceDetector detector = FirebaseVision.getInstance()
                         .getVisionFaceDetector(highAccuracyOpts);
@@ -163,7 +173,13 @@ public class MainActivity extends AppCompatActivity
                                             public void onSuccess(List<FirebaseVisionFace> faces) {
                                                 // Task completed successfully
                                                 // ...
+                                                String Smile = "";
+                                                String LE = "";
+                                                String RE = "";
+                                                imageView.setImageBitmap(photo);
                                                 for (FirebaseVisionFace face : faces) {
+
+
                                                     Rect bounds = face.getBoundingBox();
                                                     float rotY = face.getHeadEulerAngleY();  // Head is rotated to the right rotY degrees
                                                     float rotZ = face.getHeadEulerAngleZ();  // Head is tilted sideways rotZ degrees
@@ -180,28 +196,43 @@ public class MainActivity extends AppCompatActivity
                                                     if (face.getSmilingProbability() != FirebaseVisionFace.UNCOMPUTED_PROBABILITY) {
                                                         float smileProb = face.getSmilingProbability();
                                                         Log.i("MAIN ACTIVITY : ",String.valueOf(smileProb));
+                                                        //smileProbTV.setText(String.valueOf(smileProb));
+                                                        if(smileProb>=0.50)
+                                                            Smile+="SMILING ";
+                                                        else
+                                                            Smile+="NOT SMILING";
+
                                                     }
                                                     if (face.getRightEyeOpenProbability() != FirebaseVisionFace.UNCOMPUTED_PROBABILITY) {
                                                         float rightEyeOpenProb = face.getRightEyeOpenProbability();
                                                         Log.i("MAIN ACTIVITY : ",String.valueOf(rightEyeOpenProb));
+                                                        //rightEye.setText(String.valueOf(rightEyeOpenProb));
+                                                        if(rightEyeOpenProb>0.50)
+                                                            RE+="RIGHT EYE OPEN ";
+                                                        else
+                                                            RE+="RIGHT EYE CLOSED";
+                                                    }
+                                                    if(face.getLeftEyeOpenProbability()!=FirebaseVisionFace.UNCOMPUTED_PROBABILITY) {
+                                                        float leftEyeOpenProb = face.getLeftEyeOpenProbability();
+                                                        //leftEye.setText(String.valueOf(leftEyeOpenProb));
+                                                        if(leftEyeOpenProb>0.50)
+                                                            RE+="LEFT EYE OPEN ";
+                                                        else
+                                                            RE+="LEFT EYE CLOSED";
                                                     }
 
-                                                    // If face tracking was enabled:
-                                                    if (face.getTrackingId() != FirebaseVisionFace.INVALID_ID) {
-                                                        int id = face.getTrackingId();
-                                                        Log.i("MAIN ACTIVITY : ",String.valueOf(id));
-
-
-                                                    }
                                                 }
+                                                smileProbTV.setText(String.valueOf(Smile));
+                                                leftEye.setText(String.valueOf(LE));
+                                                rightEye.setText(String.valueOf(RE));
+
                                             }
                                         })
                                 .addOnFailureListener(
                                         new OnFailureListener() {
                                             @Override
                                             public void onFailure(@NonNull Exception e) {
-                                                // Task failed with an exception
-                                                // ...
+                                                Toast.makeText(MainActivity.this, "No face could be detected! Sorry!", Toast.LENGTH_SHORT).show();
                                             }
                                         });
 
