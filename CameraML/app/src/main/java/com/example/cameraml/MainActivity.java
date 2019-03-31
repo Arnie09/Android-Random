@@ -1,6 +1,13 @@
 package com.example.cameraml;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.view.View;
@@ -12,9 +19,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    ImageView imageView;
+    public static final int CAMERA_REQUEST = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,13 +35,16 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        imageView = findViewById(R.id.imageView);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent cameraIntent  = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//                File file = getFile();
+//                cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(file));
+                startActivityForResult(cameraIntent,CAMERA_REQUEST);
             }
         });
 
@@ -68,6 +84,7 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            finish();
             return true;
         }
 
@@ -81,7 +98,7 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            // Handle the camera action
+            startActivity(new Intent(getApplicationContext(),Images.class));
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -90,5 +107,27 @@ public class MainActivity extends AppCompatActivity
     }
     public void CameraClick(View V){
         //cam launch
+
+    }
+
+//    private File getFile(){
+//        File folder = new File("sdcard/CameraML");
+//        if(!folder.exists()){
+//            folder.mkdir();
+//        }
+//        File imageFile = new File(folder,"Image_01.jpg");
+//        return imageFile;
+//    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        String path = "sdcard/CameraML/";
+//        imageView.setImageDrawable(Drawable.createFromPath(path));
+        if(resultCode != RESULT_CANCELED){
+            if (requestCode == CAMERA_REQUEST) {
+                Bitmap photo = (Bitmap) data.getExtras().get("data");
+                imageView.setImageBitmap(photo);
+            }
+        }
     }
 }
